@@ -749,27 +749,18 @@ describe Kitchen::Driver::Openstack do
     let(:address) do
       double(ip: ip, fixed_ip: nil, instance_id: nil, pool: pool)
     end
-    let(:compute) { double(addresses: [address]) }
+    let(:network_response) do
+      double(body: { 'floatingip' => { 'floating_ip_address' => ip } })
+    end
+    let(:network) { double(create_floating_ip: network_response) }
 
     before(:each) do
       allow(driver).to receive(:attach_ip).with(server, ip).and_return('bing!')
-      allow(driver).to receive(:compute).and_return(compute)
+      allow(driver).to receive(:network).and_return(network)
     end
 
     it 'determines an IP to attempt to attach' do
       expect(driver.send(:attach_ip_from_pool, server, pool)).to eq('bing!')
-    end
-
-    context 'no free addresses in the specified pool' do
-      let(:address) do
-        double(ip: ip, fixed_ip: nil, instance_id: nil,
-               pool: 'some_other_pool')
-      end
-
-      it 'raises an exception' do
-        expect { driver.send(:attach_ip_from_pool, server, pool) }.to \
-          raise_error(Kitchen::ActionFailed)
-      end
     end
   end
 
